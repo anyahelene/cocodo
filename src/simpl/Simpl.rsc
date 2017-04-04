@@ -78,12 +78,12 @@ data Value = Int(int i)
 alias Env = map[Name,Value];
 
 public Value eval( (Expr)`<NUM a>`, Env env ) {
-	ae = toInt("<a>"); // "<a>" is used to convert a to a string
+	int ae = toInt(unparse(a)); // "<a>"); // "<a>" is used to convert a to a string
 	return Int(ae);
 }
 
 public Value eval((Expr)`<Expr a>+<Expr b>`, Env env) {
-	return Int(eval(a,env).i+eval(b,env).i);
+	return Int( eval(a,env).i + eval(b,env).i );
 }
 
 public Value eval((Expr)`<Expr a>*<Expr b>`, Env env) {
@@ -95,7 +95,7 @@ public Value eval((Expr)`(<Expr a>)`, Env env) {
 	return eval(a,env);
 }
 
-public default int eval(Expr e, Env env) {
+public default Value eval(Expr e, Env env) {
 	if(amb(_) := e)
 		throw "Ambiguous expression <e>";
 	else
@@ -110,12 +110,12 @@ public Value eval((Expr)`<ID f>(<Expr a>)`, Env env) {
 
 		println("Argument evaluted in:");
 		printenv(env);
-		int arg = eval(a, env);
+		Value arg = eval(a, env);
 		
 		println("<param> = <arg> in <unparse(expr)>");
 	
 		funEvalEnv = staticEnv;
-		funEvalEnv[param] = Int(arg);
+		funEvalEnv[param] = arg;
 	
 		println("Body evaluated in:");
 		printenv(funEvalEnv);
