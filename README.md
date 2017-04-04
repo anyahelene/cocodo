@@ -49,6 +49,7 @@ example = parseSimplProgram(|project://cocodo/src/simpl/example.simpl|)
 
 * The minus operator is not implemented. Add it to the evaluator and typechecker.
 * The language is missing a less-than (or other comparison) operator. Add it. Note that the less-than symbol is reserved in Rascal, so you need to escape it: `\<`.
+* There is syntax for `if`, but the evaluator (and typechecker) doesn't support it. Add `if`. 
 * Priorities and associativity is wrong: make them left associative and at the same priority
 
 
@@ -86,3 +87,10 @@ program = programTop.top;
 import tac::VirtualMachine;
 executeProgram(example, "main", [])
 ```
+
+
+# Solutions
+
+* If evaluator: `public Value eval((Expr)`if <Expr cond> then <Expr e1> else <Expr e2> end`, Env env)
+	= eval( (Int(0) := eval(cond, env)) ? e2 : e1, env );
+`

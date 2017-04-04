@@ -1,7 +1,8 @@
 module simpl::Simpl
 import String;
 import ParseTree;
-import IO;
+
+
 start syntax SimplProgram = Expr;
 
 syntax Expr
@@ -139,16 +140,19 @@ public Value eval((Expr)`<ID v>`, Env env) {
 	}
 }
 
+
 public Value eval((Expr)`let <ID v> = <Expr e1> in <Expr e2> end`, Env env) {
 	// evaluer e1
 	// tilordne variabel
 	// evaluer e2, i en kontekst hvor variabelen v har verdien til e1
 	
+//	a = [[]];
 	Name n = "<v>";
 	int i = eval(e1, env).i;
 	println("Environment before:");
 	printenv(env);
-	
+//	a[-1];
+//	a += [];
 	env[n] = Int(i);
 	println("Environment inside let body:");
 	printenv(env);

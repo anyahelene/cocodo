@@ -8,6 +8,7 @@ data Type = Int()
 data ExprTree
 	= Var(Name name, Type typ) // or Var(Name name, Type type)
 	| IntLiteral(int intValue)
+	| StrLiteral(str s)
 	| Times(ExprTree e1, ExprTree e2)
 	| Div(ExprTree e1, ExprTree e2)
 	| Plus(ExprTree e1, ExprTree e2)
