@@ -1,6 +1,6 @@
 module simpl::SimplTypeChecker
-import simpl::Simpl;
 import simpl::SimplAST;
+import simpl::Simpl;
 import IO;
 import String;
 import ParseTree;
@@ -19,7 +19,7 @@ public int newName() {
 
 
 public tuple[ExprTree, Type] typecheck( (Expr)`<NUM a>`, TcEnv env ) {
-	return <Int(toInt("<a>")), Int()>;
+	return <IntLiteral(toInt("<a>")), Int()>;
 }
 
 public tuple[ExprTree, Type] typecheck((Expr)`<Expr a>+<Expr b>`, TcEnv env) {
@@ -79,7 +79,7 @@ public tuple[ExprTree, Type] typecheck((Expr)`<ID f>(<Expr a>)`, TcEnv env) {
 		}
 	}
 	else {
-		throw "Unknown variable: <n>";
+		throw "Unknown variable: <f>";
 	}
 }
 
@@ -119,6 +119,7 @@ public tuple[ExprTree, Type] typecheck((Expr)`let <ID f>(<Type t> <ID v>) = <Exp
 
 	bodyTcEnv = env;
 	bodyTcEnv["<v>"] = paramType;
+	bodyTcEnv["<f>"] = Fun(paramType, Int()); // TODO
 	<bodyTree, retType> = typecheck(e1, bodyTcEnv);
 	
 	env["<f>"] = Fun(paramType, retType);
@@ -140,7 +141,7 @@ public Type typecheck((Type)`<Type rt>(<Type at>)`, TcEnv env) {
 	return Fun(typecheck(at, env), typecheck(rt, env));
 }
 
-public tuple[ExprTree, Type] typecheck((Program)`<Expr e>`, TcEnv env) {
+public tuple[ExprTree, Type] typecheck((SimplProgram)`<Expr e>`, TcEnv env) {
 	return typecheck(e, env);
 }
 
@@ -154,4 +155,33 @@ public void printenv(TcEnv env) {
 		}
 	}
 	println("}");
+}
+
+
+// SOLUTIONS
+public tuple[ExprTree, Type] typecheck((Expr)`if <Expr cond> then <Expr e1> else <Expr e2> end`, TcEnv env) {
+	<condTree, condType> = typecheck(cond, env);
+
+	<e1Tree, e1Type> = typecheck(e1, env);
+	<e2Tree, e2Type> = typecheck(e2, env);
+
+	if(e1Type != e2Type) {
+		throw "Incompatible types";
+	}
+	if(condType != Int()) {
+		throw "Condition should be integer";
+	}
+	
+	return <If(condTree, e1Tree, e2Tree), e1Type>;
+}
+
+public tuple[ExprTree, Type] typecheck((Expr)`<Expr a>-<Expr b>`, TcEnv env) {
+	<aTree, aType> = typecheck(a,env);
+	<bTree, bType> = typecheck(b,env);
+	
+	if(<Int(), Int()> := <aType, bType>) {
+		return <Times(aTree, bTree), Int()>;
+	}
+	
+	throw "Type error, expected int, int was <aType>, <bType>";
 }

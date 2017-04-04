@@ -1,0 +1,7 @@
+let fac(int n) = 
+  if n < 2 then fib(n-1)+fib(n-2) 
+  else 1
+  end
+ in
+   fib(5)
+end

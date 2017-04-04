@@ -68,11 +68,11 @@ lexical TacInteger = [0-9]+;
 lexical TacHexInteger = [0] [x] [0-9]+;
 
 
-public TacProgram parseProgram(str s) {
+public TacProgram parseTACProgram(str s) {
   return parse(#start[TacProgram], s).top;
 }
 
-public TacProgram parseProgram(loc l) {
+public TacProgram parseTACProgram(loc l) {
   return parse(#start[TacProgram], l).top;
 }
 

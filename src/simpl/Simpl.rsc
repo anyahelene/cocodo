@@ -2,25 +2,25 @@ module simpl::Simpl
 import String;
 import ParseTree;
 import IO;
-start syntax Program = Expr;
+start syntax SimplProgram = Expr;
 
 syntax Expr
 	= Var: ID                  // variables
 	| Num: NUM                 // integers
 	// left associative: a+b+c is interpreted as ((a+b)+c)
 	| left (
-		Times: Expr "*" Expr       // multiplication
-	  | Div: Expr "/" Expr
+		Times:  Expr "*" Expr       // multiplication
+	  | Div:    Expr "/" Expr
 	  )
 	// priority: "Expr = Expr * Expr > Expr + Expr" 
 	//           means a+b*c is interpreted as (a+(b*c))
-	> left Plus: Expr "+" Expr       // addition
-	| Assign: ID "=" Expr
-	| left Seq: Expr ";" Expr
-	| Let: "let" ID "=" Expr "in" Expr "end"    // let x = 2+2 in x*2 end
-	| LetFun: "let" ID "(" Type ID ")" "=" Expr "in" Expr "end"
-	| Appl: ID "(" Expr ")"     // function call
-	| "(" Expr ")"        // parentheses
+	> Plus:  Expr "+" Expr       // addition
+	> Minus: Expr "-" Expr       // addition
+	| Let:       "let" ID "=" Expr "in" Expr "end"    // let x = 2+2 in x*2 end
+	| LetFun:    "let" ID "(" Type ID ")" "=" Expr "in" Expr "end"
+	| If:		 "if" Expr "then" Expr "else" Expr "end"
+	| Appl:      ID "(" Expr ")"     // function call
+	|            "(" Expr ")"        // parentheses
 	;
 	
 syntax Type
@@ -77,21 +77,21 @@ data Value = Int(int i)
            | Fun(Name arg, Expr e, Env env);
 alias Env = map[Name,Value];
 
-public int eval( (Expr)`<NUM a>`, Env env ) {
+public Value eval( (Expr)`<NUM a>`, Env env ) {
 	ae = toInt("<a>"); // "<a>" is used to convert a to a string
-	return ae;
+	return Int(ae);
 }
 
-public int eval((Expr)`<Expr a>+<Expr b>`, Env env) {
-	return eval(a,env)+eval(b,env);
+public Value eval((Expr)`<Expr a>+<Expr b>`, Env env) {
+	return Int(eval(a,env).i+eval(b,env).i);
 }
 
-public int eval((Expr)`<Expr a>*<Expr b>`, Env env) {
-	return eval(a,env)*eval(b,env);
+public Value eval((Expr)`<Expr a>*<Expr b>`, Env env) {
+	return Int(eval(a,env).i*eval(b,env).i);
 }
 
 
-public int eval((Expr)`(<Expr a>)`, Env env) {
+public Value eval((Expr)`(<Expr a>)`, Env env) {
 	return eval(a,env);
 }
 
@@ -102,7 +102,7 @@ public default int eval(Expr e, Env env) {
 		throw "Unknown expression <e>";
 }
 
-public int eval((Expr)`<ID f>(<Expr a>)`, Env env) {
+public Value eval((Expr)`<ID f>(<Expr a>)`, Env env) {
 	Value fun = env["<f>"];
 	if(Fun(param, expr, staticEnv) := fun) {
 		// result is result of expr with param = arg
@@ -125,32 +125,27 @@ public int eval((Expr)`<ID f>(<Expr a>)`, Env env) {
 	return 0;
 }
 
-public int eval((Expr)`<ID v>`, Env env) {
+public Value eval((Expr)`<ID v>`, Env env) {
 	Name n = "<v>";
 	
 	if(n in env) {
 		Value val = env[n];  // a ? x gives x if a throws an exception
 		// vil være enten Int(...) eller Fun(...,...)
 		println("<n> = <val>");
-		if(Int(i) := val) {
-			return i;
-		}
-		else if(Fun(f,e,_) := val) {
-			throw "Cannot use function as a value: x =\> <unparse(e)>";
-		}
+		return val;
 	}
 	else {
 		throw "Unknown variable: <n>";
 	}
 }
 
-public int eval((Expr)`let <ID v> = <Expr e1> in <Expr e2> end`, Env env) {
+public Value eval((Expr)`let <ID v> = <Expr e1> in <Expr e2> end`, Env env) {
 	// evaluer e1
 	// tilordne variabel
 	// evaluer e2, i en kontekst hvor variabelen v har verdien til e1
 	
 	Name n = "<v>";
-	int i = eval(e1, env);
+	int i = eval(e1, env).i;
 	println("Environment before:");
 	printenv(env);
 	
@@ -160,7 +155,7 @@ public int eval((Expr)`let <ID v> = <Expr e1> in <Expr e2> end`, Env env) {
 	return eval(e2, env);
 }
 
-public int eval((Expr)`let <ID f>(<Type t> <ID v>) = <Expr e1> in <Expr e2> end`, Env env) {
+public Value eval((Expr)`let <ID f>(<Type t> <ID v>) = <Expr e1> in <Expr e2> end`, Env env) {
 	// lagre e1, og argumentet v
 	// tilordne variabel f
 	// evaluer e2, i en kontekst hvor variabelen v har verdien til e1
@@ -174,7 +169,7 @@ public int eval((Expr)`let <ID f>(<Type t> <ID v>) = <Expr e1> in <Expr e2> end`
 }
 
 
-public int eval((Program)`<Expr e>`, Env env) {
+public Value eval((SimplProgram)`<Expr e>`, Env env) {
 	return eval(e, env);
 }
 
@@ -209,3 +204,12 @@ public void printenv(Env env) {
 	}
 	println("}");
 }
+
+public SimplProgram parseSimplProgram(str s) {
+  return parse(#start[SimplProgram], s).top;
+}
+
+public SimplProgram parseSimplProgram(loc l) {
+  return parse(#start[SimplProgram], l).top;
+}
+
