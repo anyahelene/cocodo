@@ -1,3 +1,13 @@
+# Setup
+
+* Install Eclipse from: http://www.eclipse.org/downloads/eclipse-packages/
+
+* Install Rascal from: http://www.rascal-mpl.org/start/
+
+* Clone the CoCoDo Rascal source from: https://github.com/anyahelene/cocodo.git
+
+(In Eclipse, *File → Import → Git → Projects From Git*)
+ 
 
 ## Set up language plugin
 ```
