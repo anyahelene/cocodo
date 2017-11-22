@@ -8,9 +8,11 @@
 
 # Setup
 
-* Install Eclipse from: http://www.eclipse.org/downloads/eclipse-packages/
+* Install (if you don't have it already) a full Java 8 JDK. You may want to *uninstall* any previously installed JREs, to avoid confusion. Rascal needs a full JDK, and may fail if it's launched with just a JRE.
 
-* Install Rascal from: http://www.rascal-mpl.org/start/
+* Install Eclipse Neon.3 for RCP/RAP developers from https://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon3 (other versions *may* work)
+
+* Install Rascal from http://www.rascal-mpl.org/start/
 
 * Clone the CoCoDo Rascal source from: https://github.com/anyahelene/cocodo.git
 
@@ -30,7 +32,7 @@
 
 * Get a brief overview of what Rascal is and what it can be used for
 
-* Basics of syntax definition
+* Basics of syntax definition – be aware of generalised parsing and ambiguities
 
 * Basics of working with concrete syntax
 
