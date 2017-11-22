@@ -1,3 +1,11 @@
+# Language Implementation with Rascal – A Tutorial
+
+* *Anya Helene Bagge*, Department of Informatics, University of Bergen
+
+### History
+* First edition: Tutorial at CoCoDo'17
+* Second edition: Tutorial at UFCG in Campina Grande, Brazil, 2017
+
 # Setup
 
 * Install Eclipse from: http://www.eclipse.org/downloads/eclipse-packages/
@@ -17,6 +25,20 @@
 * Rascal help: http://www.rascal-mpl.org/help/
 
 * Rascal library reference: http://tutor.rascal-mpl.org/Rascal/Rascal.html
+
+# Things you should (hope) to learn
+
+* Get a brief overview of what Rascal is and what it can be used for
+
+* Basics of syntax definition
+
+* Basics of working with concrete syntax
+
+* Strings and string interpolation
+
+* Visiting data structures
+
+* Basics of making an IDE
 
 # Simple experiments
 Open the CoCoDo project. You'll find various source code in the 'src' folder.
