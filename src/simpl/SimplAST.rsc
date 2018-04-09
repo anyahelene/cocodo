@@ -6,7 +6,7 @@ data TypeAST
 	;
 
 data ProgramAST
-	= SimplProgram(list[DefAST] defs, Expr body)
+	= SimplProgram(list[DefAST] defs, ExprAST body)
 	;
 	
 data DefAST

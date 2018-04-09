@@ -14,17 +14,18 @@ syntax Def
 	
 start syntax Expr 
 	=  "(" Expr ")"
-//	> "-" Expr
+	// X > Y means the X has a high priority that Y 
 	> Apply: Expr "(" Expr ")"
+	// left means that the operator is left associative
 	> left Expr "*" Expr
-	> left Expr "+" Expr
+	> left (Expr "+" Expr  // + and - are mutually left associative
+	       |Expr "-" Expr)
 	> left Expr "\<" Expr
 	> "if" Expr "then" Expr "else" Expr "end"
-	| left Seq: Expr ";" Expr
-	| Type Var "=" Expr
-	| Let: "let" Var "=" Expr "in" Expr "end"
+	| Let: "let" Var name "=" Expr init "in" Expr body "end"
+	| LetFun: "let" Type retType Var name "(" Type argType Var arg ")" "=" Expr init "in" Expr body "end"
 	| Lambda: "(" Var ")" "-\>" Expr
-	| Var: Var name
+	| Var name
 	| Int: Num i
 	;
 
@@ -44,17 +45,15 @@ anno str node@category;
 
 data MyException = UnknownExpression(value v);
 
-Expr addParens(Expr t) = top-down visit(t) {
-	case (Expr)`<Num e>`: fail;
+Expr addParens(Expr t) = bottom-up visit(t) {
+	case (Expr)`<Num e>`: ;
+	case (Expr)`<Var e>`: ;
 	case (Expr)`<Expr e>` => (Expr)`(<Expr e>)`
-//	case x: println(x);
-//	case (Expr)`<Expr e1> + <Expr e2>` => (Expr)`(<Expr e1> + <Expr e2>)`
-//	case (Expr)`<Expr e1> * <Expr e2>` => (Expr)`(<Expr e1> * <Expr e2>)`
-//	case (Expr)`<Expr e1> - <Expr e2>` => (Expr)`(<Expr e1> - <Expr e2>)`
 //	case appl(prod(sort(/.*[Ee]xpr.*/), _, _), _): ;
 };
 
 Expr partEval(Expr t) = bottom-up visit(t) {
+	case (Expr)`<Expr a> + 0` => a
 	case (Expr)`<Num a> + <Num b>`: {
 		int c = toInt("<a>") + toInt("<b>");
 		insert parse(#Expr, "<c>");

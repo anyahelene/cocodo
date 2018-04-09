@@ -5,28 +5,28 @@ import String;
 import simpl::Simpl;
 import simpl::SimplAST;
 
-Type typecheck((Type)`int`) = Int();
+TypeAST typecheck((Type)`int`) = Int();
 
-Type typecheck((Type)`<Type t1> -\> <Type t2>`)
+TypeAST typecheck((Type)`<Type t1> -\> <Type t2>`)
 	= Fun(typecheck(t1), typecheck(t2));
 
-default Type typecheck(Type t) { 
+default TypeAST typecheck(TypeAST t) { 
 	throw Error("Unknown type <t>", t@\loc, Int());
 }
 
-tuple[ExprAST,Type] typecheckSimpl(loc file) {
+tuple[ExprAST,TypeAST] typecheckSimpl(loc file) {
 	return typecheck(parse(#start[SimplProgram], file).top, ());
 }
 
-tuple[ExprAST,Type] typecheckSimpl(loc file, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheckSimpl(loc file, TCEnv env) {
 	return typecheck(parse(#start[SimplProgram], file).top, env);
 }
 
-tuple[ExprAST,Type] typecheckSimpl(SimplProgram prog) {
+tuple[ExprAST,TypeAST] typecheckSimpl(SimplProgram prog) {
 	return typecheck(prog, ());
 }
 
-tuple[ExprAST,Type] typecheckSimpl((SimplProgram)`<Def* defs> <Expr e>`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheckSimpl((SimplProgram)`<Def* defs> <Expr e>`, TCEnv env) {
 	list[DefAST] ds = [];
 	
 	for(def <- defs) {
@@ -36,17 +36,19 @@ tuple[ExprAST,Type] typecheckSimpl((SimplProgram)`<Def* defs> <Expr e>`, TCEnv e
 	return ProgramAST(ds, typecheck(e, env));
 }
 
-tuple[DefAST,TCEnv] typecheckSimpl((Def)`<Type rTyp> <Var v>(<Type aTyp> <Var a>) = <Expr e>;`, TCEnv env) {
+tuple[DefAST,TCEnv] typecheckDef((Def)`<Type rTyp> <Var v>(<Type aTyp> <Var a>) = <Expr e>;`, TCEnv env) {
+	throw "Not implemented yet!";
 }
 
-tuple[DefAST,TCEnv] typecheckSimpl((Def)`<Type rTyp> <Var v> = <Expr e>;`, TCEnv env) {
+tuple[DefAST,TCEnv] typecheckDef((Def)`<Type rTyp> <Var v> = <Expr e>;`, TCEnv env) {
+	throw "Not implemented yet!";
 }
 
-tuple[ExprAST,Type] typecheckSimpl((Expr)`(<Expr e>)`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheckSimpl((Expr)`(<Expr e>)`, TCEnv env) {
 	return typecheck(e, env);
 }
 
-tuple[ExprAST,Type] typecheckOperator(str opName, Expr e1, Expr e2, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheckOperator(str opName, Expr e1, Expr e2, TCEnv env) {
 	<a1, t1> = typecheck(e1, env);
 	<a2, t2> = typecheck(e2, env);
 	if(t1 == Int() && t2 == Int())
@@ -58,24 +60,24 @@ tuple[ExprAST,Type] typecheckOperator(str opName, Expr e1, Expr e2, TCEnv env) {
 	//    * throw feil
 	//    * skriv ut feilmelding
 	//    * returner feilmeldinger i en egen liste
-		return Error("* expected int arguments", e@\loc) ;
+		return Error("* expected int arguments", e1@\loc) ;
 	}
 }
 
-tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> + <Expr e2>`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheck(e : (Expr)`<Expr e1> + <Expr e2>`, TCEnv env) {
 	return typecheckOperator("+", e1, e2, env);
 }
 
-tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> * <Expr e2>`, TCEnv env)
+tuple[ExprAST,TypeAST] typecheck(e : (Expr)`<Expr e1> * <Expr e2>`, TCEnv env)
 	= typecheckOperator("*", e1, e2, env);
 
-tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> - <Expr e2>`, TCEnv env)
+tuple[ExprAST,TypeAST] typecheck(e : (Expr)`<Expr e1> - <Expr e2>`, TCEnv env)
 	= typecheckOperator("-", e1, e2, env);
 
-tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> \< <Expr e2>`, TCEnv env)
+tuple[ExprAST,TypeAST] typecheck(e : (Expr)`<Expr e1> \< <Expr e2>`, TCEnv env)
 	= typecheckOperator("\<", e1, e2, env);
 
-tuple[ExprAST,Type] typecheck(fullE : (Expr)`if <Expr c> then <Expr t> else <Expr e> end`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheck(fullE : (Expr)`if <Expr c> then <Expr t> else <Expr e> end`, TCEnv env) {
 	<aC, tC> = typecheck(c, env);
 	<a1,t1> = typecheck(t, env);
 	<a2,t2> = typecheck(e, env);
@@ -95,7 +97,7 @@ tuple[ExprAST,Type] typecheck(fullE : (Expr)`if <Expr c> then <Expr t> else <Exp
 }
 
 
-tuple[ExprAST,Type] typecheck((Expr)`let <Var v> = <Expr e1> in <Expr e2> end`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheck((Expr)`let <Var v> = <Expr e1> in <Expr e2> end`, TCEnv env) {
 //	TCEnv localTCEnv = env; // begge to refererer til samme verdi
 //	localTCEnv["<v>"] = typecheck(e1, env); // localTCEnv refererer til en ny map, med den ekstra bindingen – env er uendret
 //	return typecheck(e2, localTCEnv);
@@ -115,7 +117,7 @@ tuple[ExprAST,Type] typecheck((Expr)`let <Var v> = <Expr e1> in <Expr e2> end`, 
 }
 
 
-tuple[ExprAST,Type] typecheck((Expr)`let <Type rt> <Var f>(<Type t> <Var a>) = <Expr e1> in <Expr e2> end`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheck((Expr)`let <Type rt> <Var f>(<Type t> <Var a>) = <Expr e1> in <Expr e2> end`, TCEnv env) {
 	// let twice(x) = x * x in twice(2) end
 	argType = typecheck(t);
 	retType = typecheck(rt);
@@ -133,7 +135,7 @@ tuple[ExprAST,Type] typecheck((Expr)`let <Type rt> <Var f>(<Type t> <Var a>) = <
 	}
 }
 
-tuple[ExprAST,Type] typecheck((Expr)`<Expr f>(<Expr arg>)`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheck((Expr)`<Expr f>(<Expr arg>)`, TCEnv env) {
 	<funAST, funType> = typecheck(f, env);
 	<inputAST, inputType> = typecheck(arg, env);
 	
@@ -152,9 +154,9 @@ tuple[ExprAST,Type] typecheck((Expr)`<Expr f>(<Expr arg>)`, TCEnv env) {
 
 
 
-tuple[ExprAST,Type] typecheck((Expr)`<Num a>`, TCEnv env) = <Int(toInt("<a>")), Int()>;
+tuple[ExprAST,TypeAST] typecheck((Expr)`<Num a>`, TCEnv env) = <Int(toInt("<a>")), Int()>;
 
-tuple[ExprAST,Type] typecheck((Expr)`<Var a>`, TCEnv env) {
+tuple[ExprAST,TypeAST] typecheck((Expr)`<Var a>`, TCEnv env) {
 	v = "<a>";
 	if(v in env) {
 		return <Var("<a>"), env[v]>;
@@ -164,14 +166,16 @@ tuple[ExprAST,Type] typecheck((Expr)`<Var a>`, TCEnv env) {
 	}	
 }
 
-default tuple[ExprAST,Type] typecheck(Expr e, TCEnv env) {
-	throw "Unknown expression <e>";
+default tuple[ExprAST,TypeAST] typecheck(Expr e, TCEnv env) {
+	if(amb(alternatives) := e) {
+		str s = "";
+		for(Expr alt <- alternatives) {
+			s = s + "\n====\n<typecheck(alt, env)>\n====\n";
+		}
+		return <Error("Ambiguity: <s>", |unknown://|), Int()>;
+	}
+	else {
+		throw "Unknown expression <e>";
+	}
 }
 
-tuple[ExprAST,Type] typecheck(amb(alternatives), TCEnv env) {
-	Type s = Int();
-	for(alt <- alternatives) {
-		s = s + "\n====\n<typecheck(alt, env)>\n====\n";
-	}
-	return Error("Ambiguity", |unknown://|);
-}

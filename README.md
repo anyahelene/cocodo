@@ -82,6 +82,7 @@ example = parseSimpl(|project://cocodo/src/simpl/example.simpl|)
 
 * The minus operator is not implemented. Add it to the evaluator and typechecker.
 * Simpl is half way between a language based on expressions, and a language that takes a list of definitions, and then a list of expressions. This should be fixed in the evaluator and the typechecker (it's done already for the Simpr language)
+* The Plugin file defines the Eclipse plugin, have a look at it, and 
 * The language is missing a less-than (or other comparison) operator. Add it. Note that the less-than symbol is reserved in Rascal, so you need to escape it: `\<`.
 * There is syntax for `if`, but the evaluator (and typechecker) doesn't support it. Add `if`. 
 * Priorities and associativity is wrong: make them left associative and at the same priority
