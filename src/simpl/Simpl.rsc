@@ -10,7 +10,7 @@ syntax Expr
 	| Num: NUM                 // integers
 	// left associative: a+b+c is interpreted as ((a+b)+c)
 	| left (
-		Times:  Expr "*" Expr       // multiplication
+		Times:  Expr leftOperand "*" Expr rightOperand       // multiplication
 	  | Div:    Expr "/" Expr
 	  )
 	// priority: "Expr = Expr * Expr > Expr + Expr" 

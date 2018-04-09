@@ -10,7 +10,7 @@
 
 * Install (if you don't have it already) a full Java 8 JDK. You may want to *uninstall* any previously installed JREs, to avoid confusion. Rascal needs a full JDK, and may fail if it's launched with just a JRE.
 
-* Install Eclipse Neon.3 for RCP/RAP developers from https://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon3 (other versions *may* work)
+* Install Eclipse Neon.3 for RCP/RAP developers from https://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon3 (other versions *may* work) (*Oh, and be careful to not have spaces in your installation directory!*)
 
 * Install Rascal from http://www.rascal-mpl.org/start/
 
