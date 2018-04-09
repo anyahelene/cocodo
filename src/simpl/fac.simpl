@@ -1,7 +1,7 @@
-let fac(int n) = 
+int fac(int n) = 
   if n then n*fac(n-1) 
   else 1
   end
- in
-   fac(5)
-end
+;
+
+fac(5)

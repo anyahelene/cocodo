@@ -1,63 +1,88 @@
 module simpl::Simpl
-import String;
 import ParseTree;
+import IO;
+import String;
 
-
-start syntax SimplProgram = Expr;
-
-syntax Expr
-	= Var: ID                  // variables
-	| Num: NUM                 // integers
-	// left associative: a+b+c is interpreted as ((a+b)+c)
-	| left (
-		Times:  Expr leftOperand "*" Expr rightOperand       // multiplication
-	  | Div:    Expr "/" Expr
-	  )
-	// priority: "Expr = Expr * Expr > Expr + Expr" 
-	//           means a+b*c is interpreted as (a+(b*c))
-	> Plus:  Expr "+" Expr       // addition
-	> Minus: Expr "-" Expr       // addition
-	| Let:       "let" ID "=" Expr "in" Expr "end"    // let x = 2+2 in x*2 end
-	| LetFun:    "let" ID "(" Type ID ")" "=" Expr "in" Expr "end"
-	| If:		 "if" Expr "then" Expr "else" Expr "end"
-	| Appl:      ID "(" Expr ")"     // function call
-	|            "(" Expr ")"        // parentheses
+start syntax SimplProgram
+	= Def* Expr
 	;
 	
+syntax Def 
+	= Type Var "(" Type Var ")" "=" Expr ";"
+	| Type Var "=" Expr ";"
+	;
+	
+start syntax Expr 
+	=  "(" Expr ")"
+//	> "-" Expr
+	> Apply: Expr "(" Expr ")"
+	> left Expr "*" Expr
+	> left Expr "+" Expr
+	> left Expr "\<" Expr
+	> "if" Expr "then" Expr "else" Expr "end"
+	| left Seq: Expr ";" Expr
+	| Type Var "=" Expr
+	| Let: "let" Var "=" Expr "in" Expr "end"
+	| Lambda: "(" Var ")" "-\>" Expr
+	| Var: Var name
+	| Int: Num i
+	;
+
 syntax Type
-	= ID
-	| Type "(" Type ")"
+	= "int"
+	| Type "-\>" Type
 	;
 	
-// identifiers
-//    y !<< x means 'x' must not be preceeded by  'y'
-//    x !>> y means 'x' must not by followed by 'y'
-// so, this means that an identifier is a sequence of one
-// or more letters or underscores, with no additional
-// letters or underscores before or after
-lexical ID = [a-zA-Z_] !<< [a-zA-Z_]+ !>> [a-zA-Z_];
+lexical Var = [a-zA-Z] !<< [a-zA-Z]+ !>> [a-zA-Z];
 
-// numbers
-lexical NUM = [0-9] !<< [0-9]+ !>> [0-9];
-
-// whitespace: this non-terminal is inserted *between* all terminals and
-// non-terminals in all syntax productions (does not apply to lexical
-// productions)
-layout WS = [\ \n\r\f]*;
-
-// Each grammar non-terminal corresponds to a type, in this case we have:
-//   Program
-//   Expr -- can be a Program
-//   ID -- can be Expr
-//   NUM -- can be Expr
+lexical Num = [0-9]+;
 
 
+layout LAYOUT = [\ \n\r\f\t]* !>> [\ \n\r\f\t];
 
-public SimplProgram parseSimplProgram(str s) {
-  return parse(#start[SimplProgram], s).top;
+anno str node@category;
+
+data MyException = UnknownExpression(value v);
+
+Expr addParens(Expr t) = top-down visit(t) {
+	case (Expr)`<Num e>`: fail;
+	case (Expr)`<Expr e>` => (Expr)`(<Expr e>)`
+//	case x: println(x);
+//	case (Expr)`<Expr e1> + <Expr e2>` => (Expr)`(<Expr e1> + <Expr e2>)`
+//	case (Expr)`<Expr e1> * <Expr e2>` => (Expr)`(<Expr e1> * <Expr e2>)`
+//	case (Expr)`<Expr e1> - <Expr e2>` => (Expr)`(<Expr e1> - <Expr e2>)`
+//	case appl(prod(sort(/.*[Ee]xpr.*/), _, _), _): ;
+};
+
+Expr partEval(Expr t) = bottom-up visit(t) {
+	case (Expr)`<Num a> + <Num b>`: {
+		int c = toInt("<a>") + toInt("<b>");
+		insert parse(#Expr, "<c>");
+	}
+	case (Expr)`<Num a> * <Num b>`: {
+		int c = toInt("<a>") * toInt("<b>");
+		insert parse(#Expr, "<c>");
+	}
+	case (Expr)`if <Num c> then <Expr th> else <Expr el> end`: {
+		if(toInt("<c>") != 0) {
+			insert th;
+		}
+		else {
+			insert el;
+		}
+	}
+};
+
+/*
+Expr desugar(Expr e) {
+	return visit(e) {
+	case (Expr)`(<Var v>) -\> <Expr body>`
+		=> (Expr)`let int FOO(int <Var v>) = <Expr body> in FOO end`
+	}
 }
+*/
 
-public SimplProgram parseSimplProgram(loc l) {
-  return parse(#start[SimplProgram], l).top;
-}
+public bool parses(str s) = parse(#start[SimplProgram], s)?;
+public SimplProgram parseSimpl(loc l) = parse(#start[SimplProgram], l).top;
+public SimplProgram parseSimpl(str s) = parse(#start[SimplProgram], s).top;
 

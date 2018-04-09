@@ -5,12 +5,13 @@
 ### History
 * First edition: Tutorial at CoCoDo'17
 * Second edition: Tutorial at UFCG in Campina Grande, Brazil, 2017
+* Third edition: Tutorial at CoCoDo'18
 
 # Setup
 
 * Install (if you don't have it already) a full Java 8 JDK. You may want to *uninstall* any previously installed JREs, to avoid confusion. Rascal needs a full JDK, and may fail if it's launched with just a JRE.
 
-* Install Eclipse Neon.3 for RCP/RAP developers from https://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon3 (other versions *may* work) (*Oh, and be careful to not have spaces in your installation directory!*)
+* Install Eclipse Oxygen.2 for RCP/RAP developers from https://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon3 (other versions *may* work) (*Oh, and be careful to not have spaces in your installation directory!*)
 
 * Install Rascal from http://www.rascal-mpl.org/start/
 
@@ -49,7 +50,7 @@ If you don't have a Rascal console open in Eclipse already, right click on the p
 
 
 ## Set up language plugin
-This will setup up syntax hightlighting for the languages we're creating.
+This will setup up syntax highlighting for the languages we're creating.
 
 ```
 rascal>import Plugin;
@@ -59,12 +60,20 @@ ok
 ```
 
 ## Simpl Language
+Import the language definition:
 ```
 import simpl::Simpl;
 ```
+*Remember the semicolon at the end, otherwise you'll get a confusing `>>>` prompt!*
+
+If you want to play around with parsing, you should also import the ParseTree module:
+```
+import ParseTree;
+```
+
 
 ```
-example = parseSimplProgram(|project://cocodo/src/simpl/example.simpl|)
+example = parseSimpl(|project://cocodo/src/simpl/example.simpl|)
 ```
 
 
@@ -72,6 +81,7 @@ example = parseSimplProgram(|project://cocodo/src/simpl/example.simpl|)
 ### Things to do
 
 * The minus operator is not implemented. Add it to the evaluator and typechecker.
+* Simpl is half way between a language based on expressions, and a language that takes a list of definitions, and then a list of expressions. This should be fixed in the evaluator and the typechecker (it's done already for the Simpr language)
 * The language is missing a less-than (or other comparison) operator. Add it. Note that the less-than symbol is reserved in Rascal, so you need to escape it: `\<`.
 * There is syntax for `if`, but the evaluator (and typechecker) doesn't support it. Add `if`. 
 * Priorities and associativity is wrong: make them left associative and at the same priority

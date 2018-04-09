@@ -1,158 +1,177 @@
 module simpl::SimplTypeChecker
-import simpl::SimplAST;
-import simpl::Simpl;
+import ParseTree;
 import IO;
 import String;
-import ParseTree;
+import simpl::Simpl;
+import simpl::SimplAST;
 
-alias Name = str;
+Type typecheck((Type)`int`) = Int();
 
-alias TcEnv = map[Name,Type];
+Type typecheck((Type)`<Type t1> -\> <Type t2>`)
+	= Fun(typecheck(t1), typecheck(t2));
 
-int nameCounter = 0;
-
-public int newName() {
-	int r = nameCounter;
-	nameCounter = nameCounter + 1;
-	return r;
+default Type typecheck(Type t) { 
+	throw Error("Unknown type <t>", t@\loc, Int());
 }
 
-
-public tuple[ExprTree, Type] typecheck( (Expr)`<NUM a>`, TcEnv env ) {
-	return <IntLiteral(toInt("<a>")), Int()>;
+tuple[ExprAST,Type] typecheckSimpl(loc file) {
+	return typecheck(parse(#start[SimplProgram], file).top, ());
 }
 
-public tuple[ExprTree, Type] typecheck((Expr)`<Expr a>+<Expr b>`, TcEnv env) {
-	<aTree, aType> = typecheck(a,env);
-	<bTree, bType> = typecheck(b,env);
-	
-	if(<Int(), Int()> := <aType, bType>) {
-		return <Plus(aTree, bTree), Int()>;
-	}
-	/*
-	else if(<Str(), Str()> := <aType, bType>) { // string concatenation
-		return Str();
-	}
-	else if(<Str(), _> := <aType, bType>) { // string concat as in Java
-		return Str();
-	}
-	*/
-	
-	throw "Type error, expected int, int was <aType>, <bType>";
+tuple[ExprAST,Type] typecheckSimpl(loc file, TCEnv env) {
+	return typecheck(parse(#start[SimplProgram], file).top, env);
 }
 
-public tuple[ExprTree, Type] typecheck((Expr)`<Expr a>*<Expr b>`, TcEnv env) {
-	<aTree, aType> = typecheck(a,env);
-	<bTree, bType> = typecheck(b,env);
-	
-	if(<Int(), Int()> := <aType, bType>) {
-		return <Times(aTree, bTree), Int()>;
-	}
-	
-	throw "Type error, expected int, int was <aType>, <bType>";
+tuple[ExprAST,Type] typecheckSimpl(SimplProgram prog) {
+	return typecheck(prog, ());
 }
 
-public default int typecheck(Expr e, TcEnv env) {
-	if(amb(_) := e)
-		throw "Ambiguous expression <e>";
-	else
-		throw "Unknown expression <e>";
+tuple[ExprAST,Type] typecheckSimpl((SimplProgram)`<Def* defs> <Expr e>`, TCEnv env) {
+	list[DefAST] ds = [];
+	
+	for(def <- defs) {
+		<def, env> = typecheckDef(def, env);
+		ds += def;
+	}		
+	return ProgramAST(ds, typecheck(e, env));
 }
 
-public tuple[ExprTree, Type] typecheck((Expr)`<ID f>(<Expr a>)`, TcEnv env) {
-	if("<f>" in env) {
-		Type fun = env["<f>"];
-		if(Fun(paramType, retType) := fun) {
-			println("Argument typechecked in:");
-			printenv(env);
-			<argTree, argType> = typecheck(a, env);
-			
-			if(paramType == argType) {
-				return <Apply("<f>", argTree), retType>;
-			}
-			else {
-				throw "Wrong argument type: expected <paramType>, got <argType>";
-			}	
-		}
-		else {
-			throw "Not a function: <f> (is <fun>)";
-		}
-	}
-	else {
-		throw "Unknown variable: <f>";
-	}
+tuple[DefAST,TCEnv] typecheckSimpl((Def)`<Type rTyp> <Var v>(<Type aTyp> <Var a>) = <Expr e>;`, TCEnv env) {
 }
 
-public tuple[ExprTree, Type] typecheck((Expr)`<ID v>`, TcEnv env) {
-	Name n = "<v>";
-	
-	if(n in env) {
-		varType = env[n];
-		return <Var("<v>", varType), varType>;  // type of the variable
-	}
-	else {
-		throw "Unknown variable: <n>";
-	}
+tuple[DefAST,TCEnv] typecheckSimpl((Def)`<Type rTyp> <Var v> = <Expr e>;`, TCEnv env) {
 }
 
-public tuple[ExprTree, Type] typecheck((Expr)`let <ID v> = <Expr e1> in <Expr e2> end`, TcEnv env) {
-	// typechecker e1
-	// tilordne variabel
-	// typecheckuer e2, i en kontekst hvor variabelen v har verdien til e1
-	
-	Name n = "<v>";	
-	Name id = "<v>_<newName()>";	
-	
-	<e1Tree, varType> = typecheck(e1, env);
-	println("TcEnvironment before:");
-	printenv(env);
-	
-	env[n] = varType;
-	println("TcEnvironment inside let body:");
-	printenv(env);
-	<e2Tree, e2Type> = typecheck(e2, env);
-	return <Let(n, e1Tree, e2Tree), e2Type>;
-}
-
-public tuple[ExprTree, Type] typecheck((Expr)`let <ID f>(<Type t> <ID v>) = <Expr e1> in <Expr e2> end`, TcEnv env) {
-	paramType = typecheck(t, env);
-
-	bodyTcEnv = env;
-	bodyTcEnv["<v>"] = paramType;
-	bodyTcEnv["<f>"] = Fun(paramType, Int()); // TODO
-	<bodyTree, retType> = typecheck(e1, bodyTcEnv);
-	
-	env["<f>"] = Fun(paramType, retType);
-	<e2Tree, e2Type> = typecheck(e2, env);
-	
-	return <LetFun("<f>", "<v>", bodyTree, e2Tree), e2Type>;
-}
-
-public Type typecheck((Type)`<ID t>`, TcEnv env) {
-	switch("<t>") {
-	case "int": return Int();
-	case "str": return Str();
-	}
-	
-	throw "Unknown type name <unparse(t)>";
-}
-
-public Type typecheck((Type)`<Type rt>(<Type at>)`, TcEnv env) {
-	return Fun(typecheck(at, env), typecheck(rt, env));
-}
-
-public tuple[ExprTree, Type] typecheck((SimplProgram)`<Expr e>`, TcEnv env) {
+tuple[ExprAST,Type] typecheckSimpl((Expr)`(<Expr e>)`, TCEnv env) {
 	return typecheck(e, env);
 }
 
+tuple[ExprAST,Type] typecheckOperator(str opName, Expr e1, Expr e2, TCEnv env) {
+	<a1, t1> = typecheck(e1, env);
+	<a2, t2> = typecheck(e2, env);
+	if(t1 == Int() && t2 == Int())
+		return <Apply(Builtin("int::<opName>"), [a1, a2]), Int()>;
+	else if(t1 == String() && t2 == String())
+		return <Apply(Builtin("string::append"),[a1, a2]), String()>;
+	else {
+	// Eventuelt:
+	//    * throw feil
+	//    * skriv ut feilmelding
+	//    * returner feilmeldinger i en egen liste
+		return Error("* expected int arguments", e@\loc) ;
+	}
+}
 
-public void printenv(TcEnv env) {
-	println("{");
-	for(k <- env) {
-		switch(env[k]) {
-		case Int(): println("  <k> : int");
-		case Fun(a,b): println("  <k> : <a> -\> <b>");
+tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> + <Expr e2>`, TCEnv env) {
+	return typecheckOperator("+", e1, e2, env);
+}
+
+tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> * <Expr e2>`, TCEnv env)
+	= typecheckOperator("*", e1, e2, env);
+
+tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> - <Expr e2>`, TCEnv env)
+	= typecheckOperator("-", e1, e2, env);
+
+tuple[ExprAST,Type] typecheck(e : (Expr)`<Expr e1> \< <Expr e2>`, TCEnv env)
+	= typecheckOperator("\<", e1, e2, env);
+
+tuple[ExprAST,Type] typecheck(fullE : (Expr)`if <Expr c> then <Expr t> else <Expr e> end`, TCEnv env) {
+	<aC, tC> = typecheck(c, env);
+	<a1,t1> = typecheck(t, env);
+	<a2,t2> = typecheck(e, env);
+	newNode = If(aC, a1, a2);
+	
+	if(tC == Int()) {
+		if(t1 == t2) {
+			return <newNode, t1>;
+		}
+		else {
+			return <Error("Branches should have same type: <t1> != <t2>", fullE@\loc, newNode), t1>;
 		}
 	}
-	println("}");
+	else {
+		return <Error("Condition should return int", c@\loc, newNode), t1>;
+	}
+}
+
+
+tuple[ExprAST,Type] typecheck((Expr)`let <Var v> = <Expr e1> in <Expr e2> end`, TCEnv env) {
+//	TCEnv localTCEnv = env; // begge to refererer til samme verdi
+//	localTCEnv["<v>"] = typecheck(e1, env); // localTCEnv refererer til en ny map, med den ekstra bindingen – env er uendret
+//	return typecheck(e2, localTCEnv);
+	// dette funker like grei; endringen av "env" har ingen effekt utenfor
+	// denne funksjonen
+	
+	<a1, t1> = typecheck(e1, env);
+	env["<v>"] = t1;
+	<a2, t2> = typecheck(e2, env);
+	
+	//if("<v>" in env) {
+	//	return <Error("Redefined variable <v>", v@\loc, Let("<v>", a1, a2)), t2>;
+	//}
+	//else {
+		return <Let("<v>", a1, a2), t2>;
+	//}
+}
+
+
+tuple[ExprAST,Type] typecheck((Expr)`let <Type rt> <Var f>(<Type t> <Var a>) = <Expr e1> in <Expr e2> end`, TCEnv env) {
+	// let twice(x) = x * x in twice(2) end
+	argType = typecheck(t);
+	retType = typecheck(rt);
+	bodyEnv = env + ("<a>" : argType, "<f>" : Fun([argType], retType));
+	<bodyAST, bodyType> = typecheck(e1, bodyEnv);
+
+	env["<f>"] = Fun([argType], retType);
+	<a2, t2> = typecheck(e2, env);
+	
+	if(retType == bodyType) {
+		return <LetFun("<f>", [Param(argType, "<a>")], bodyAST, a2), t2>;
+	}
+	else {
+		return <Error("Expected return type <retType>, got <bodyType>", rt@\loc, LetFun("<f>", [Param(argType, "<a>")], bodyAST, a2)), retType>;
+	}
+}
+
+tuple[ExprAST,Type] typecheck((Expr)`<Expr f>(<Expr arg>)`, TCEnv env) {
+	<funAST, funType> = typecheck(f, env);
+	<inputAST, inputType> = typecheck(arg, env);
+	
+	if(Fun([argType], retType) := funType) {
+		if(argType == inputType) {
+			return <Apply(funAST, [inputAST]), retType>;
+		}
+		else {
+			return <Error("Wrong argument type, expected <argType>", arg@\loc, Apply(funAST, [inputAST])), retType>;
+		}
+	}
+	else {
+		return <Error("Not a function: <f>", f@\loc, Apply(funAST, [inputAST])), funType>;
+	}
+}
+
+
+
+tuple[ExprAST,Type] typecheck((Expr)`<Num a>`, TCEnv env) = <Int(toInt("<a>")), Int()>;
+
+tuple[ExprAST,Type] typecheck((Expr)`<Var a>`, TCEnv env) {
+	v = "<a>";
+	if(v in env) {
+		return <Var("<a>"), env[v]>;
+	}
+	else {
+		return <Error("Undefined variable <v>", a@\loc, Var("<a>")), Int()>;
+	}	
+}
+
+default tuple[ExprAST,Type] typecheck(Expr e, TCEnv env) {
+	throw "Unknown expression <e>";
+}
+
+tuple[ExprAST,Type] typecheck(amb(alternatives), TCEnv env) {
+	Type s = Int();
+	for(alt <- alternatives) {
+		s = s + "\n====\n<typecheck(alt, env)>\n====\n";
+	}
+	return Error("Ambiguity", |unknown://|);
 }
