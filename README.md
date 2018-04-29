@@ -16,8 +16,7 @@
 * Install Rascal from http://www.rascal-mpl.org/start/
 
 * Clone the CoCoDo Rascal source from: https://github.com/anyahelene/cocodo.git
-
-(In Eclipse, *File → Import → Git → Projects From Git*)
+   * In Eclipse: *File → Import → Git → Projects From Git*
 
 # Resources
 
